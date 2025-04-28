@@ -25,7 +25,7 @@ exports.handler = async (event) => {
 
   // In real world, upload to S3 / Supabase Storage here
   // Temporary fake URL for now
-  const fakePublicUrl = `https://publishdemo.netlify.app/upload/${randomFilename}`;
+  const fakePublicUrl = `https://publishdemo.netlify.app/uploads/${randomFilename}`;
 
   return {
     statusCode: 200,
