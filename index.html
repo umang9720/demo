@@ -3,20 +3,111 @@
 <head>
   <meta charset="UTF-8">
   <title>Upload and Go Live</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      background: #f0f2f5;
+      text-align: center;
+    }
+    h1 {
+      color: #333;
+    }
+    #uploadForm {
+      margin-top: 20px;
+      padding: 20px;
+      border: 2px dashed #0070f3;
+      border-radius: 10px;
+      background: #fff;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    #uploadForm.dragover {
+      background-color: #e0f7ff;
+      border-color: #0056b3;
+    }
+    #fileInput {
+      margin-top: 20px;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: #0070f3;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    #linkContainer {
+      margin-top: 30px;
+    }
+    .popup {
+      background: #4caf50;
+      color: white;
+      padding: 15px;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      border-radius: 5px;
+      z-index: 1000;
+      display: none;
+    }
+    @media (max-width: 600px) {
+      #uploadForm {
+        width: 90%;
+      }
+    }
+  </style>
 </head>
 <body>
+
   <h1>Upload a File to Make it Live!</h1>
+
   <form id="uploadForm">
+    <p>Drag & drop your file here or select it manually.</p>
     <input type="file" id="fileInput" required />
+    <br>
     <button type="submit">Upload</button>
   </form>
 
   <div id="linkContainer"></div>
 
+  <div class="popup" id="popup"></div>
+
   <script>
     const form = document.getElementById('uploadForm');
     const fileInput = document.getElementById('fileInput');
     const linkContainer = document.getElementById('linkContainer');
+    const popup = document.getElementById('popup');
+
+    function showPopup(message) {
+      popup.textContent = message;
+      popup.style.display = 'block';
+      setTimeout(() => {
+        popup.style.display = 'none';
+      }, 4000);
+    }
+
+    form.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      form.classList.add('dragover');
+    });
+
+    form.addEventListener('dragleave', () => {
+      form.classList.remove('dragover');
+    });
+
+    form.addEventListener('drop', (e) => {
+      e.preventDefault();
+      form.classList.remove('dragover');
+      if (e.dataTransfer.files.length > 0) {
+        fileInput.files = e.dataTransfer.files;
+      }
+    });
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -24,23 +115,37 @@
       const file = fileInput.files[0];
       if (!file) return alert('Please select a file');
 
-      // Upload file to Netlify "functions" won't work directly.
-      // So we fake it: use Netlify Large Media or simply put files into "uploads/" folder
-
       const formData = new FormData();
       formData.append('file', file);
 
-      // Send POST to your own serverless function
-      const response = await fetch('/.netlify/functions/upload', {
-        method: 'POST',
-        body: formData
-      });
+      // Random file name generation (simulate)
+      const randomName = Math.random().toString(36).substring(2, 15) + 
+                         Math.random().toString(36).substring(2, 15) + 
+                         "_" + file.name;
 
-      const result = await response.json();
-      
-      linkContainer.innerHTML = `
-        <p>File uploaded! <a href="${result.url}" target="_blank">View it here</a></p>
-      `;
+      formData.append('randomName', randomName);
+
+      try {
+        const response = await fetch('/.netlify/functions/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+
+        const shareLink = result.url;
+
+        linkContainer.innerHTML = `
+          <p>✅ File uploaded! 
+          <a href="${shareLink}" target="_blank">${shareLink}</a></p>
+          <button onclick="navigator.share({ title: 'Shared File', url: '${shareLink}' })">🔗 Share this file</button>
+        `;
+
+        showPopup(`File uploaded! Link: ${shareLink}`);
+      } catch (error) {
+        console.error(error);
+        alert('Upload failed. Please try again.');
+      }
     });
   </script>
 </body>
