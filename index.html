@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Upload and Go Live</title>
+</head>
+<body>
+  <h1>Upload a File to Make it Live!</h1>
+  <form id="uploadForm">
+    <input type="file" id="fileInput" required />
+    <button type="submit">Upload</button>
+  </form>
+
+  <div id="linkContainer"></div>
+
+  <script>
+    const form = document.getElementById('uploadForm');
+    const fileInput = document.getElementById('fileInput');
+    const linkContainer = document.getElementById('linkContainer');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const file = fileInput.files[0];
+      if (!file) return alert('Please select a file');
+
+      // Upload file to Netlify "functions" won't work directly.
+      // So we fake it: use Netlify Large Media or simply put files into "uploads/" folder
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Send POST to your own serverless function
+      const response = await fetch('/.netlify/functions/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+      
+      linkContainer.innerHTML = `
+        <p>File uploaded! <a href="${result.url}" target="_blank">View it here</a></p>
+      `;
+    });
+  </script>
+</body>
+</html>
